@@ -1,0 +1,24 @@
+spring:
+  application:
+    name: ayd2
+
+  #connection bd
+  datasource:
+    username: root
+    password: 4056ELVIS
+    url: jdbc:mysql://localhost:3306/db_challenge_ayd2
+
+  jpa:
+    show-sql: true
+    hibernate:
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+    open-in-view: false
+
+
+#config server
+server:
+  servlet:
+    context-path: /ayd2/api/v1
