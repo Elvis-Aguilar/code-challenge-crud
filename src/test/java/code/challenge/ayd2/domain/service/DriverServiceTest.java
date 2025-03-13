@@ -39,78 +39,126 @@ class DriverServiceTest {
         driverDto = new DriverCreateDto("Elvis Aguilar", 15);
         driverEntity = new DriverEntity();
         driverEntity.setName("Elvis Aguilar");
+        driverEntity.setAge(15);
+        driverEntity.setId(1L);
     }
 
     @Test
     void createDriver_WhenDriverDoesNotExist_ShouldCreateDriver() {
-        // Arrange
-        when(driverRepository.findByName(driverDto.name())).thenReturn(Optional.empty());
+        // arrange
+        when(driverRepository.existsByName(driverDto.name())).thenReturn(false);
         when(driverMapper.toDriverEntity(driverDto)).thenReturn(driverEntity);
+        when(driverRepository.save(driverEntity)).thenReturn(driverEntity);
         when(driverMapper.toDriverCreateDto(driverEntity)).thenReturn(driverDto);
 
-        // Act
+        //arc
         Optional<DriverCreateDto> result = driverService.CreateDriver(driverDto);
 
-        // Assert
+        // assert
         assertTrue(result.isPresent());
         assertEquals(driverDto.name(), result.get().name());
-        verify(driverRepository, times(1)).findByName(driverDto.name());
-        verify(driverMapper, times(1)).toDriverEntity(driverDto);
-        verify(driverMapper, times(1)).toDriverCreateDto(driverEntity);
+        verify(driverRepository, times(1)).existsByName(driverDto.name());
+        verify(driverRepository, times(1)).save(driverEntity);
     }
 
     @Test
     void createDriver_WhenDriverExists_ShouldThrowException() {
-        // Arrange
-        when(driverRepository.findByName(driverDto.name())).thenReturn(Optional.of(driverEntity));
+        //arrange
+        when(driverRepository.existsByName(driverDto.name())).thenReturn(true);
 
-        // Act & Assert
+        // arc and assert
         assertThrows(RequestConflictException.class, () -> driverService.CreateDriver(driverDto));
-        verify(driverRepository, times(1)).findByName(driverDto.name());
-        verify(driverMapper, never()).toDriverEntity(any());
+        verify(driverRepository, times(1)).existsByName(driverDto.name());
+        verify(driverRepository, never()).save(any());
     }
 
     @Test
     void getDriverById_WhenDriverExists_ShouldReturnDriver() {
-        // Arrange
+        //arrange
         when(driverRepository.findById(1L)).thenReturn(Optional.of(driverEntity));
         when(driverMapper.toDriverCreateDto(driverEntity)).thenReturn(driverDto);
 
-        // Act
+        //arc
         Optional<DriverCreateDto> result = driverService.getDriverById(1L);
 
-        // Assert
+        // assert
         assertTrue(result.isPresent());
         assertEquals(driverDto.name(), result.get().name());
         verify(driverRepository, times(1)).findById(1L);
-        verify(driverMapper, times(1)).toDriverCreateDto(driverEntity);
     }
 
     @Test
     void getDriverById_WhenDriverDoesNotExist_ShouldThrowException() {
-        // Arrange
+        // arrange
         when(driverRepository.findById(1L)).thenReturn(Optional.empty());
 
-        // Act & Assert
+        // arc and assert
         assertThrows(BadRequestException.class, () -> driverService.getDriverById(1L));
         verify(driverRepository, times(1)).findById(1L);
     }
 
     @Test
     void getAllDrivers_ShouldReturnListOfDrivers() {
-        // Arrange
+        // arrange
         List<DriverEntity> entities = List.of(driverEntity);
         when(driverRepository.findAll()).thenReturn(entities);
         when(driverMapper.toDriverCreateDto(driverEntity)).thenReturn(driverDto);
 
-        // Act
+        // arc
         List<DriverCreateDto> result = driverService.getAllDrivers();
 
-        // Assert
+        // assert
         assertFalse(result.isEmpty());
         assertEquals(1, result.size());
         assertEquals(driverDto.name(), result.get(0).name());
         verify(driverRepository, times(1)).findAll();
-        verify(driverMapper, times(1)).toDriverCreateDto(driverEntity);
+    }
+
+    @Test
+    void updateDriver_WhenDriverExists_ShouldUpdateDriver() {
+        // arrange
+        when(driverRepository.findById(1L)).thenReturn(Optional.of(driverEntity));
+        when(driverRepository.save(any(DriverEntity.class))).thenReturn(driverEntity);
+        when(driverMapper.toDriverCreateDto(driverEntity)).thenReturn(driverDto);
+
+        //arc
+        Optional<DriverCreateDto> result = driverService.updateDriver(1L, driverDto);
+
+        // assert
+        assertTrue(result.isPresent());
+        assertEquals(driverDto.name(), result.get().name());
+        verify(driverRepository, times(1)).findById(1L);
+        verify(driverRepository, times(1)).save(driverEntity);
+    }
+
+    @Test
+    void updateDriver_WhenDriverDoesNotExist_ShouldThrowException() {
+        // arrange
+        when(driverRepository.findById(1L)).thenReturn(Optional.empty());
+
+        // arc and assert
+        assertThrows(BadRequestException.class, () -> driverService.updateDriver(1L, driverDto));
+        verify(driverRepository, times(1)).findById(1L);
+    }
+
+    @Test
+    void deleteDriverById_WhenDriverExists_ShouldDeleteDriver() {
+        // arrange
+        when(driverRepository.existsById(1L)).thenReturn(true);
+
+        // arc
+        driverService.deleteDriverById(1L);
+
+        // assert
+        verify(driverRepository, times(1)).deleteById(1L);
+    }
+
+    @Test
+    void deleteDriverById_WhenDriverDoesNotExist_ShouldThrowException() {
+        when(driverRepository.existsById(1L)).thenReturn(false);
+
+        assertThrows(BadRequestException.class, () -> driverService.deleteDriverById(1L));
+        verify(driverRepository, times(1)).existsById(1L);
+        verify(driverRepository, never()).deleteById(any());
     }
 }

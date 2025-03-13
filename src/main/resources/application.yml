@@ -5,13 +5,13 @@ spring:
   #connection bd
   datasource:
     username: root
-    password: 4056ELVIS
+    password: XXX
     url: jdbc:mysql://localhost:3306/db_challenge_ayd2
 
   jpa:
     show-sql: true
     hibernate:
-      ddl-auto: create-drop
+      ddl-auto: update
     properties:
       hibernate:
         dialect: org.hibernate.dialect.MySQLDialect

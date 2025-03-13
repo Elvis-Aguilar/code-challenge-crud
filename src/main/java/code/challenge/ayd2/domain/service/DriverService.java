@@ -11,6 +11,8 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 @Service
 @RequiredArgsConstructor
@@ -21,13 +23,14 @@ public class DriverService {
 
     public Optional<DriverCreateDto> CreateDriver(DriverCreateDto driver) {
         // search driver with name
-        DriverEntity exist = this.driverRepository.findByName(driver.name()).orElse(null);
+        boolean exist = this.driverRepository.existsByName(driver.name());
 
-        if (exist != null) {
+        if (exist) {
             throw new RequestConflictException("driver with name exist");
         }
 
         DriverEntity driverCreatedEntity = this.driverMapper.toDriverEntity(driver);
+        driverCreatedEntity = this.driverRepository.save(driverCreatedEntity);
 
         return Optional.of(this.driverMapper.toDriverCreateDto(driverCreatedEntity));
     }
@@ -35,7 +38,7 @@ public class DriverService {
     public Optional<DriverCreateDto> getDriverById(Long id) {
         DriverEntity exist = this.driverRepository.findById(id).orElse(null);
 
-        if (exist != null) {
+        if (exist == null) {
             throw new BadRequestException("driver with id not exist");
         }
 
@@ -44,8 +47,32 @@ public class DriverService {
     }
 
     public List<DriverCreateDto> getAllDrivers() {
-        return this.driverRepository.findAll()
+        Iterable<DriverEntity> iterable = this.driverRepository.findAll();
+
+        return StreamSupport.stream(iterable.spliterator(), false)
+                .map(driverMapper::toDriverCreateDto)
+                .collect(Collectors.toList());
     }
 
+    public Optional<DriverCreateDto> updateDriver(Long id, DriverCreateDto driver) {
+        DriverEntity existingDriver = this.driverRepository.findById(id)
+                .orElseThrow(() -> new BadRequestException("Driver with this ID does not exist"));
+
+        existingDriver.setName(driver.name());
+        existingDriver.setAge(driver.age());
+
+        DriverEntity updatedDriver = this.driverRepository.save(existingDriver);
+
+        return Optional.of(this.driverMapper.toDriverCreateDto(updatedDriver));
+    }
+
+    public void deleteDriverById(Long id) {
+
+        if (!this.driverRepository.existsById(id)) {
+            throw new BadRequestException("Driver with this ID does not exist");
+        }
+
+        this.driverRepository.deleteById(id);
+    }
 
 }
